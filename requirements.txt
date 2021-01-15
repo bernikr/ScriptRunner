@@ -1,3 +1,2 @@
 flask==1.1.*
-gunicorn==20.0.*
-gevent==20.12.*
+uwsgi==2.0.*
