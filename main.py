@@ -7,19 +7,21 @@ from flask import Flask, Response, abort
 
 app = Flask(__name__)
 
+SCRIPT_DIR = os.getenv('SCRIPT_DIR', os.path.dirname(os.path.realpath(__file__))+'/scripts')
+
 
 @app.route('/')
 def index():
-    return "Hello World"
+    return 'Hello World'
 
 
 @app.route('/run/<script>')
 def run(script):
-    scripts = os.listdir("scripts")
-    if script + ".py" not in scripts:
-        abort(404, "Script not found")
+    scripts = os.listdir(SCRIPT_DIR)
+    if script + '.py' not in scripts:
+        abort(404, 'Script not found')
 
-    p = subprocess.Popen(["python", "scripts/" + script + ".py"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(['python', SCRIPT_DIR + '/' + script + '.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     timeout = [time() + 60]
 
