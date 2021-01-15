@@ -4,11 +4,11 @@ import sys
 import threading
 from time import time, sleep
 
-from flask import Flask, Response, abort
+from flask import Flask, Response, abort, request
 
 app = Flask(__name__)
 
-SCRIPT_DIR = os.getenv('SCRIPT_DIR', os.path.dirname(os.path.realpath(__file__))+'/scripts')
+SCRIPT_DIR = os.getenv('SCRIPT_DIR', os.path.dirname(os.path.realpath(__file__)) + '/scripts')
 
 
 @app.route('/')
@@ -20,8 +20,9 @@ def process_response(process, timeout=60):
     stoptime = [time() + timeout]
 
     def stop():
-        while True:
+        while process.poll() is None:
             if time() > stoptime[0]:
+                print('Terminated')
                 process.kill()
                 break
             sleep(stoptime[0] - time())
@@ -42,8 +43,8 @@ def process_response(process, timeout=60):
 @app.route('/install')
 def install():
     p = subprocess.Popen([sys.executable, '-m', 'pip', 'install', '-r', SCRIPT_DIR + '/requirements.txt'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return process_response(p, 600)
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    return process_response(p, request.args.get('timeout', default=600, type=int))
 
 
 @app.route('/run/<script>')
@@ -55,7 +56,7 @@ def run(script):
     p = subprocess.Popen(['python', SCRIPT_DIR + '/' + script + '.py'],
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    return process_response(p)
+    return process_response(p, request.args.get('timeout', default=60, type=int))
 
 
 if __name__ == '__main__':
