@@ -37,7 +37,7 @@ def process_response(process, timeout=60):
                 break
             yield r
 
-    return Response(generate(), mimetype='text/plain', content_type='text/event-stream')
+    return Response(generate(), mimetype='text/event-stream')
 
 
 @app.route('/install')
@@ -57,6 +57,17 @@ def run(script):
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     return process_response(p, request.args.get('timeout', default=60, type=int))
+
+
+@app.route('/test')
+def test():
+    n = request.args.get('n', default=10, type=int)
+    
+    def generate():
+        for i in range(n):
+            yield str(i) + '\n'
+            sleep(1)
+    return Response(generate(), mimetype='text/event-stream')
 
 
 if __name__ == '__main__':
