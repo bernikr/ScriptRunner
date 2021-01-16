@@ -1,7 +1,6 @@
 import os
 import sys
-import gevent
-from gevent import subprocess
+from gevent import subprocess, sleep, spawn
 from time import time
 
 from flask import Flask, Response, abort, request
@@ -29,20 +28,19 @@ def process_response(args, timeout=60):
                 print('Terminated')
                 p.kill()
                 break
-            gevent.sleep(stoptime[0] - time())
+            sleep(stoptime[0] - time())
 
     print('spawn stopper')
-    gevent.spawn(stop)
+    spawn(stop)
     print('spawend stopper')
 
     def generate():
         print('generator started')
-        while True:
+        for line in iter(p.stdout.readline, b''):
+            sleep(0)  # try to fix the output not loading in quick scripts
+            print('line')
             stoptime[0] = time() + timeout
-            r = p.stdout.readline()
-            if len(r) == 0:
-                break
-            yield r
+            yield line
 
     return Response(generate(), mimetype='text/event-stream')
 
@@ -70,7 +68,7 @@ def test():
     def generate():
         for i in range(n):
             yield str(i) + '\n'
-            gevent.sleep(1)
+            sleep(1)
     return Response(generate(), mimetype='text/event-stream')
 
 
