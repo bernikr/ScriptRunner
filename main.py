@@ -17,20 +17,26 @@ def index():
 
 
 def process_response(args, timeout=60):
+    print('start process')
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print('started process')
     stoptime = [time() + timeout]
 
     def stop():
         while p.poll() is None:
+            print('stopper')
             if time() > stoptime[0]:
                 print('Terminated')
                 p.kill()
                 break
             gevent.sleep(stoptime[0] - time())
 
+    print('spawn stopper')
     gevent.spawn(stop)
+    print('spawend stopper')
 
     def generate():
+        print('generator started')
         while True:
             stoptime[0] = time() + timeout
             r = p.stdout.readline()
