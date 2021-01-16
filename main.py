@@ -16,14 +16,15 @@ def index():
     return 'Hello World'
 
 
-def process_response(process, timeout=60):
+def process_response(args, timeout=60):
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stoptime = [time() + timeout]
 
     def stop():
-        while process.poll() is None:
+        while p.poll() is None:
             if time() > stoptime[0]:
                 print('Terminated')
-                process.kill()
+                p.kill()
                 break
             gevent.sleep(stoptime[0] - time())
 
@@ -32,7 +33,7 @@ def process_response(process, timeout=60):
     def generate():
         while True:
             stoptime[0] = time() + timeout
-            r = process.stdout.readline()
+            r = p.stdout.readline()
             if len(r) == 0:
                 break
             yield r
@@ -42,9 +43,8 @@ def process_response(process, timeout=60):
 
 @app.route('/install')
 def install():
-    p = subprocess.Popen([sys.executable, '-m', 'pip', 'install', '-r', SCRIPT_DIR + '/requirements.txt'],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return process_response(p, request.args.get('timeout', default=600, type=int))
+    return process_response([sys.executable, '-m', 'pip', 'install', '-r', SCRIPT_DIR + '/requirements.txt'],
+                            request.args.get('timeout', default=600, type=int))
 
 
 @app.route('/run/<script>')
@@ -53,10 +53,8 @@ def run(script):
     if script + '.py' not in scripts:
         abort(404, 'Script not found')
 
-    p = subprocess.Popen(['python', SCRIPT_DIR + '/' + script + '.py'],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    return process_response(p, request.args.get('timeout', default=60, type=int))
+    return process_response(['python', SCRIPT_DIR + '/' + script + '.py'],
+                            request.args.get('timeout', default=60, type=int))
 
 
 @app.route('/test')
