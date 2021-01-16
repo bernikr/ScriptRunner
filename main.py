@@ -1,8 +1,8 @@
 import os
-import subprocess
 import sys
-import threading
-from time import time, sleep
+import gevent
+from gevent import subprocess
+from time import time
 
 from flask import Flask, Response, abort, request
 
@@ -25,9 +25,9 @@ def process_response(process, timeout=60):
                 print('Terminated')
                 process.kill()
                 break
-            sleep(stoptime[0] - time())
+            gevent.sleep(stoptime[0] - time())
 
-    threading.Thread(target=stop).start()
+    gevent.spawn(stop)
 
     def generate():
         while True:
@@ -62,11 +62,11 @@ def run(script):
 @app.route('/test')
 def test():
     n = request.args.get('n', default=10, type=int)
-    
+
     def generate():
         for i in range(n):
             yield str(i) + '\n'
-            sleep(1)
+            gevent.sleep(1)
     return Response(generate(), mimetype='text/event-stream')
 
 
