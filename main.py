@@ -1,9 +1,8 @@
 import os
 import sys
-from gevent import subprocess, sleep, spawn
-from time import time
 
 from flask import Flask, Response, abort, request
+from gevent import subprocess, sleep
 
 app = Flask(__name__)
 
@@ -15,40 +14,28 @@ def index():
     return 'Hello World'
 
 
-def process_response(args, timeout=60):
-    print('start process')
+def process_response(args):
+    print('start process: ', ' '.join(args))
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print('started process')
-    stoptime = [time() + timeout]
-
-    def stop():
-        while p.poll() is None:
-            print('stopper')
-            if time() > stoptime[0]:
-                print('Terminated')
-                p.kill()
-                break
-            sleep(stoptime[0] - time())
-
-    print('spawn stopper')
-    spawn(stop)
-    print('spawend stopper')
 
     def generate():
-        print('generator started')
-        for line in iter(p.stdout.readline, b''):
-            sleep(0)  # try to fix the output not loading in quick scripts
-            print('line')
-            stoptime[0] = time() + timeout
-            yield line
+        try:
+            for line in iter(p.stdout.readline, b''):
+                yield line
+            if p.poll() is None:
+                print("process closed stdout and stderr but didn't terminate; terminating now.")
+                p.terminate()
+        except GeneratorExit:
+            # occurs when new output is yielded to a disconnected client
+            print('client disconnected, killing process')
+            p.terminate()
 
     return Response(generate(), mimetype='text/event-stream')
 
 
 @app.route('/install')
 def install():
-    return process_response([sys.executable, '-m', 'pip', 'install', '-r', SCRIPT_DIR + '/requirements.txt'],
-                            request.args.get('timeout', default=600, type=int))
+    return process_response([sys.executable, '-m', 'pip', 'install', '-r', SCRIPT_DIR + '/requirements.txt'])
 
 
 @app.route('/run/<script>')
@@ -57,8 +44,7 @@ def run(script):
     if script + '.py' not in scripts:
         abort(404, 'Script not found')
 
-    return process_response(['python', SCRIPT_DIR + '/' + script + '.py'],
-                            request.args.get('timeout', default=60, type=int))
+    return process_response(['python', SCRIPT_DIR + '/' + script + '.py'])
 
 
 @app.route('/test')
