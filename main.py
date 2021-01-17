@@ -47,17 +47,6 @@ def run(script):
     return process_response(['python', '-u', SCRIPT_DIR + '/' + script + '.py'])
 
 
-@app.route('/test')
-def test():
-    n = request.args.get('n', default=10, type=int)
-
-    def generate():
-        for i in range(n):
-            yield str(i) + '\n'
-            sleep(1)
-    return Response(generate(), mimetype='text/event-stream')
-
-
 if __name__ == '__main__':
     app.run()
 
