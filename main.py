@@ -44,7 +44,7 @@ def run(script):
     if script + '.py' not in scripts:
         abort(404, 'Script not found')
 
-    return process_response(['python', SCRIPT_DIR + '/' + script + '.py'])
+    return process_response(['python', '-u', SCRIPT_DIR + '/' + script + '.py'])
 
 
 @app.route('/test')
