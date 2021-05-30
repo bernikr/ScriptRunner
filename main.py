@@ -35,12 +35,12 @@ def process_socket(ws, args):
 
 @app.route('/install')
 def install():
-    return render_template("run.html", path=f"/install")
+    return render_template("run.html", path=f"/install", scriptname="pip install")
 
 
 @app.route('/run/<script>')
 def run(script):
-    return render_template("run.html", path=f"/run/{script}")
+    return render_template("run.html", path=f"/run/{script}", scriptname=script)
 
 
 @sockets.route('/ws/install')

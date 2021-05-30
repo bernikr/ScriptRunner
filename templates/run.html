@@ -1,6 +1,6 @@
 <html lang="en">
 <head>
-    <title>ScriptRunner - ...</title>
+    <title>ScriptRunner - {{ scriptname }}</title>
     <script>
         function print(text){
             document.querySelector("#output").textContent += text;
@@ -36,6 +36,7 @@
     </script>
 </head>
 <body>
+<h1>Running {{ scriptname }}...</h1>
 <pre id="output"></pre>
 </body>
 </html>
