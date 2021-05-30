@@ -17,15 +17,18 @@ def index():
 
 
 def process_socket(ws, args):
-    print('start process: ', ' '.join(args))
+    print('start process:', ' '.join(args))
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     while not ws.closed:
-        for line in iter(p.stdout.readline, b''):
-            ws.send(line)
-        if p.poll() is None:
-            ws.send("process closed stdout and stderr but didn't terminate; terminating now.")
-            p.terminate()
+        try:
+            for line in iter(p.stdout.readline, b''):
+                ws.send(line)
+            if p.poll() is None:
+                ws.send("process closed stdout and stderr but didn't terminate; terminating now.")
+                p.terminate()
+        except:
+            break
     print('client disconnected, killing process')
     p.terminate()
 
